@@ -1,0 +1,68 @@
+---
+title: "Data 607 Project 2"
+author: "Trishita Nath"
+date: "3/12/2021"
+output: html_document
+---
+
+## Introduction
+### Preparing different datasets for downstream analysis work.
+
+Since I am a fan of movies, I am going to analyze the movies data-set. I will perform the following steps
+
+* Deal with missing data 
+* Proper naming of columns
+* Perform visual analysis
+
+My focus will be to analyze the gross and budget for Pirates of the Carribbean Films in the data set
+```{r eval=TRUE}
+library(readr)
+library(tidyr)
+library(tidyverse)
+library(reshape2)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r echo=TRUE, eval=TRUE}
+movies_data <- read.csv("https://raw.githubusercontent.com/nathtrish334/Data-607/main/movie_dataset.csv",header=TRUE,sep=",")
+head(movies_data[1:20])
+```
+```{r echo=TRUE, eval=TRUE}
+nrow(movies_data) # Total records
+names(movies_data) # Column names
+colSums(movies_data == '' | is.na(movies_data)) # columns with blanks and NA
+```
+gross year has highest NA  and/or blank entries = 884
+
+### Cleaning Data
+
+Removing NA's
+```{r echo=TRUE, eval=TRUE}
+movies_data_clean<-na.omit(movies_data)
+nrow(movies_data_clean)
+```
+movie title, budget, and gross for Pirates of the Carribbean films
+```{r echo=TRUE, eval=TRUE}
+pirates_data<-movies_data_clean[grep("Pirates of the Caribbean:", movies_data_clean$movie_title), ]
+head(pirates_data)
+```
+Extract movie title, budget, and gross
+```{r echo=TRUE, eval=TRUE}
+pirates_data_cleaned<-subset(pirates_data, select=c(movie_title, budget, gross))
+head(pirates_data_cleaned)
+pirates_data_cleaned<-data.frame(pirates_data_cleaned)
+```
+Melt this subset using the reshape library
+```{r echo=TRUE, eval=TRUE}
+pirates_melted <- melt(pirates_data_cleaned, id = 'movie_title')
+head(pirates_melted)
+```
+stacked bar plot for gross vs budget for each of Pirates of the Carribean Films
+```{r echo=TRUE, eval=TRUE}
+ggplot() + geom_bar(aes(y = value, x = movie_title, fill =variable ), data = pirates_melted,stat="identity")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs( x="Pirates Film", y="Amount in Dollars")
+```
+
+For each Pirates film, the gross was larger than the budget
