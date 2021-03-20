@@ -4,28 +4,28 @@
 		<Title>Introduction to Probability</Title>
 		<Authors>Grinstead, C. Snell, J</Authors>
 		<Publisher>AMS</Publisher>
-		<Year of Publication>1997</Year of Publication>
+		<Year>1997</Year of Publication>
 		<Pages>520</Pages>
     </book>
     <book>
         <Title>A First Course in Linear Algebra</Title>
 		<Authors>Robert A. Beezer</Authors>
 		<Publisher>Cambridge</Publisher>
-		<Year of Publication>2008</Year of Publication>
+		<Year>2008</Year of Publication>
 		<Pages>938</Pages>
     </book>
     <book>
         <Title>R for Data Science</Title>
 		<Authors>G. Grolemund, Wickham H.</Authors>
 		<Publisher>O'Reilly</Publisher>
-		<Year of Publication>2017</Year of Publication>
+		<Year>2017</Year of Publication>
 		<Pages>522</Pages>
     </book>
 	<book>
         <Title>Linear Regression using R</Title>
 		<Authors>David J. Lilja</Authors>
 		<Publisher>Minessota Uni.</Publisher>
-		<Year of Publication>2016</Year of Publication>
+		<Year>2016</Year of Publication>
 		<Pages>82</Pages>
     </book>
 </root>
