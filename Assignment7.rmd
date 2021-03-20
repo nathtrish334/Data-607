@@ -1,0 +1,89 @@
+---
+title: "Data 607 Assignment 7"
+author: "Trishita Nath"
+date: "3/20/2021"
+output: html_document
+---
+
+```{r echo=TRUE, eval=TRUE}
+library(XML)
+library(rjson)
+library(httr)
+library(tidyverse)
+```
+## Introduction
+
+I prepared three files with the same data in the three specified formats: HTML, JSON and XML. These files are hosted on GitHub.   
+I captured the following attributes of books:  
+* Title
+* Authors
+* Publisher
+* Year of Publication  
+Each of the files was manually written and then loaded into Github for reference / reproducibility.  
+
+## Data Loading
+
+### XML Data
+
+```{r echo=TRUE, eval=TRUE}
+xml_data_raw <- xmlParse(GET("https://raw.githubusercontent.com/nathtrish334/Data-607/main/bookdata.xml"))
+```
+### HTML Data
+
+```{r echo=TRUE, eval=TRUE}
+html_data_raw <- readLines("https://raw.githubusercontent.com/nathtrish334/Data-607/main/bookdata.html")
+# Pattern for the <td> html tags
+regex_td = "<td>([0-9A-Za-z\\., \\(\\)-\\']*)</td>"
+# Extract the lines that matching the pattern
+regx_lines = grep(regex_td, html_data_raw[1:length(html_data_raw)], value=TRUE)
+# Extract the required information from <td> tag
+html_data_raw <- trimws(unlist(sub("<td>([0-9A-Za-z\\., \\(\\)-\\']*)</td>", "\\1", regx_lines)))
+#str(html_data_raw)
+```
+### JSON Data
+
+```{r echo=TRUE, eval=TRUE}
+json_data_raw <- fromJSON(file="https://raw.githubusercontent.com/nathtrish334/Data-607/main/bookdata.json")
+```
+
+## Data Frames
+
+### XML Data Frame
+
+```{r echo=TRUE, eval=TRUE}
+xml_data_df <- xmlToDataFrame(xml_data_raw)
+xml_data_df
+```
+
+### HTML Data Frame
+
+```{r echo=TRUE, eval=TRUE}
+html_data_df <- cbind.data.frame(split(html_data_raw, rep(1:4, times=length(html_data_raw)/4)), stringsAsFactors=F)
+names(html_data_df) <- c("Title", "Authors", "Publisher", "Year")
+html_data_df
+#str(html_data_df)
+```
+
+### JSON Data Frame
+
+```{r echo=TRUE, eval=TRUE}
+json_data_df <- data.frame(do.call("rbind", json_data_raw))
+# Unnest data and convert it back to a df
+json_data_df <- unnest(json_data_df, cols = c(Title, Authors, Publisher, Year)) %>% data.frame()
+json_data_df
+```
+
+## Comparison of the Data Frames
+
+```{r echo=TRUE, eval=TRUE}
+library(diffobj)
+identical(xml_data_df,html_data_df)
+identical(xml_data_df,json_data_df)
+identical(json_data_df,html_data_df)
+
+#Check differences
+diffObj(xml_data_df,json_data_df)
+diffObj(json_data_df,html_data_df)
+```
+
+The only notable difference in the data frames is the 'Year' column. This is has a type of **chr** in html and xml data frames, whereas its type in the json data frame is **num**.
