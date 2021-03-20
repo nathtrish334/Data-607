@@ -3,28 +3,24 @@
    "Title": "Introduction to Probability",
    "Authors": "Grinstead, C. Snell, J",
    "Publisher": "AMS",
-   "Year": 1997,
-   "Pages": 520
+   "Year": 1997
  },
  {
    "Title": "A First Course in Linear Algebra",
    "Authors": "Robert A. Beezer",
    "Publisher": "Cambridge",
-   "Year": 2008,
-   "Pages": 938
+   "Year": 2008
  },
  {
    "Title": "R for Data Science",
    "Authors": "G. Grolemund, Wickham H.",
    "Publisher": "O'Reilly",
-   "Year": 2017,
-   "Pages": 522
+   "Year": 2017
  },
  {
    "Title": "Linear Regression using R",
    "Authors": "David J. Lilja",
    "Publisher": "Minest. Uni.",
-   "Year": 2016,
-   "Pages": 82
+   "Year": 2016
  }
 ]
