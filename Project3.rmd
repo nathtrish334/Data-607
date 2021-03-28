@@ -1,0 +1,162 @@
+---
+title: "DATA 607 - Project 3"
+author: "Trishita Nath"
+date: "3/28/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## INTRODUCTION
+
+I came across a study conducted by Jeff Hale in 2018 about *The Most In-Demand Skills for Data Scientists*. More can be found [here](https://towardsdatascience.com/the-most-in-demand-skills-for-data-scientists-4a4a8db896db)   
+I will be analyzing his two datasets to determine ***“Which are the most valued data science skills?”***
+
+## Data Source
+
+I will use the the two datasets from John Hale's study. I have hosted them on my GitHub repository. 
+
+```{r echo=TRUE, eval=TRUE}
+gen_skills_url <- "https://raw.githubusercontent.com/nathtrish334/Data-607/main/ds_general_skills_revised.csv"
+soft_skills_url <- "https://raw.githubusercontent.com/nathtrish334/Data-607/main/ds_job_listing_software.csv"
+```
+
+## DATA LOADING
+
+```{r echo=TRUE, eval=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(rvest)
+library(tm)
+library(SnowballC)
+library(wordcloud2)
+library(stringr)
+library(plotly)
+```
+
+```{r echo=TRUE, eval=TRUE}
+gen_skills <- read_csv(file=gen_skills_url)
+soft_skills <- read_csv(file=soft_skills_url)
+```
+
+## Data Cleaning  
+I cleaned the two datasets and joined them into one
+
+```{r echo=TRUE, eval=TRUE}
+df_1 <- as_tibble(gen_skills, key = "ï..Keyword")
+df_1$Skill_Set <- "Soft"
+df_2 <- as_tibble(soft_skills, key = "ï..Keyword")
+df_2$Skill_Set <- "Tech"
+df_2 <- select(df_2,-c(6,7,8,9,10,11,12))
+combined_df<-rbind(df_1, df_2)
+head(combined_df)
+
+# Rename the variable
+names(combined_df)[names(combined_df) == "ï..Keyword"] <- "Keyword"
+
+#Tidying the combined dataframe
+combined_df$Total <- rowSums(sapply(combined_df[,c(2:5)], as.numeric))
+combined_df <- mutate(combined_df[, c(1,6,2:5,7)])
+combined_df <- data.frame(combined_df)
+colnames(combined_df)
+```
+
+Averages of keywords
+
+```{r echo=TRUE, eval=TRUE}
+SimplyHired <- 3829
+Monster <- 3746
+Indeed <- 5138
+LinkedIn <- 8610
+Total <- LinkedIn + Indeed + SimplyHired + Monster
+combined_df$LinkedIn <- ((combined_df$LinkedIn)/(LinkedIn))*100
+combined_df$Indeed <- ((combined_df$Indeed)/(Indeed))*100
+combined_df$SimplyHired <- ((combined_df$SimplyHired)/(SimplyHired))*100
+combined_df$Monster <- ((combined_df$Monster)/((Monster)))*100
+combined_df$Total <- ((combined_df$Total/((Total))))*100
+dim(combined_df)
+head(combined_df, 10)
+```
+
+## ANALYSIS
+
+### Top 10 Soft Skills for Data Scientists
+```{r echo=TRUE, eval=TRUE}
+combined_df_soft <- filter(combined_df, combined_df$Skill_Set == "Soft")
+dim(combined_df_soft)
+
+combined_df_soft_top10 <- arrange(combined_df_soft[1:10,c(1,3:7)], desc(Total))
+combined_df_soft_top10
+
+# Top ten Soft skills as a percentage of total Data Science jobs
+
+plot_ly(combined_df_soft_top10, 
+        x = ~ combined_df_soft_top10, 
+        y = combined_df_soft_top10$Total, 
+        type = 'bar',
+        name = combined_df_soft_top10$Keyword)%>% 
+layout(title = 'Top 10 Soft Skills for Data Scientists',yaxis = list(title = '% of Data Science Jobs'), xaxis = list(title = 'Soft Skills'))
+```
+
+### Top 10 Soft skills as a pecentage of total data science jobs by job site
+```{r echo=TRUE, eval=TRUE}
+soft_top10_by_site <- data.frame("Keyword"=combined_df_soft_top10, combined_df_soft_top10)
+
+soft_visual_top10 <- soft_top10_by_site[,c('Keyword', 'LinkedIn', 'Indeed', 'SimplyHired', 'Monster', 'Total')]
+head(soft_visual_top10, 5)
+
+plot_ly(soft_visual_top10, x = ~Keyword, y = ~LinkedIn, type = 'bar', name = "Linkedin") %>%
+add_trace(y = ~Indeed, name = "Indeed") %>% 
+add_trace(y = ~SimplyHired, name = "SimplyHired") %>% 
+add_trace(y = ~Monster, name = "Monster") %>% 
+add_trace(y = ~Total, name = "Average") %>% 
+layout(title = 'Soft Skills by Job Sites', yaxis = list(title = '% of Data Science Jobs'), xaxis = list(title = 'Soft Skills'), barmode = 'group')
+```
+
+### Top 10 Technical Skills for Data Scientists
+```{r echo=TRUE, eval=TRUE}
+combined_df_tech <- filter(combined_df, combined_df$Skill_Set == "Tech")
+dim(combined_df_tech)
+
+combined_df_tech_top10 <- arrange(combined_df_tech[1:10,c(1,3:7)], desc(Total))
+combined_df_tech_top10
+
+# Top 10 Technical skills as a percentage of total Data Science jobs
+
+plot_ly(combined_df_tech_top10, 
+        x = ~ combined_df_tech_top10, 
+        y = combined_df_tech_top10$Total, 
+        type = 'bar', 
+        name = combined_df_tech_top10$Keyword)%>% 
+layout(title = 'Top 10 Technical Skills for Data Scientists',yaxis = list(title = '% of Data Science Jobs'), xaxis = list(title = 'Technical Skills'))
+```
+
+### Top 10 Technical skills as a pecentage of total data science jobs by job site
+```{r echo=TRUE, eval=TRUE}
+tech_top10_by_site <- data.frame("Keyword"=combined_df_tech_top10, combined_df_tech_top10)
+
+tech_visual_top10 <- tech_top10_by_site[,c('Keyword', 'LinkedIn', 'Indeed', 'SimplyHired', 'Monster', 'Total')]
+head(tech_visual_top10, 5)
+
+plot_ly(tech_visual_top10, x = ~Keyword, y = ~LinkedIn, type = 'bar', name = "Linkedin") %>%
+add_trace(y = ~Indeed, name = "Indeed") %>% 
+add_trace(y = ~SimplyHired, name = "SimplyHired") %>% 
+add_trace(y = ~Monster, name = "Monster") %>% 
+add_trace(y = ~Total, name = "Average") %>% 
+layout(title = 'Technical Skills by Job Sites', yaxis = list(title = '% of Data Science Jobs'), xaxis = list(title = 'Technical Skills'), barmode = 'group')
+```
+
+### Top Soft and Technical skills needed for a data scientist
+```{r echo=TRUE, eval=TRUE}
+# Top Soft skill required
+head(combined_df_tech,1)
+
+# Top Technical skill required
+head(combined_df_soft,1)
+```
+
+## CONCLUSION
+
+According to this dataset, the top soft skill that employers are looking for when hiring a data scientist is Analysis. The top technical skill being targeted is Python.
