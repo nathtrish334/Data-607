@@ -1,0 +1,66 @@
+---
+title: "Assignment9"
+author: "Trishita Nath"
+date: "3/30/2021"
+output: 
+  html_document:
+    code_folding: show
+    df_print: paged
+    toc: true
+    toc_float: false
+    toc_collapsed: false
+    smooth_scroll: false
+    toc_depth: 3
+number_sections: true
+theme: paper
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment – Web APIs
+
+The New York Times web site provides a rich set of APIs, as described here: https://developer.nytimes.com/apis
+You’ll need to start by signing up for an API key.
+Your task is to choose one of the New York Times APIs, construct an interface in R to read in the JSON data, and
+transform it into an R DataFrame.  
+
+## Introduction
+
+I will make a call to the topstories API to read the JSON data and transform it into an R data frame. Specifically I will be working with the sports API: https://api.nytimes.com/svc/topstories/v2/sports.json?api-key=WSkYmmMA8AoszM0tsfyPRX33G3GNSSzJ  
+
+My API key is _WSkYmmMA8AoszM0tsfyPRX33G3GNSSzJ_
+
+
+## Loading the required packages
+
+```{r}
+library(httr)
+library(jsonlite)
+library(dplyr)
+library(kableExtra)
+```
+
+## Reading and Transforming Data
+
+```{r}
+api_url <- "https://api.nytimes.com/svc/topstories/v2/sports.json?api-key=WSkYmmMA8AoszM0tsfyPRX33G3GNSSzJ"
+
+# Read JSON data from the API
+json_object <- fromJSON(api_url)
+
+# Conver JSON to DataFrame
+travel_df <- json_object$results
+class(travel_df) # COnfirm it is a dataframe
+
+# Column names
+colnames(travel_df)
+
+# Select relevant columns
+travel_df <- subset(travel_df, select = c(section, title, abstract, url, byline))
+
+# Show the first 50 records
+head(travel_df,50)
+
+```
