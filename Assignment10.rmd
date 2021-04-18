@@ -1,0 +1,319 @@
+---
+title: "Data 607 Week 10 Assignment"
+author: "Trishita Nath"
+date: "4/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+In Text Mining with R, Chapter 2 looks at Sentiment Analysis.  In this assignment, you should start by getting the primary example code from chapter 2 working in an R Markdown document.  You should provide a citation to this base code.  You’re then asked to extend the code in two ways:
+
+* Work with a different corpus of your choosing, and 
+* Incorporate at least one additional sentiment lexicon (possibly from another R package that you’ve found through research).
+
+### Loading Libraries
+```{r}
+library(tidyverse)
+library(tidytext)
+library(textdata)
+library(janeaustenr)
+library(stringr)
+library(wordcloud)
+library(reshape2)
+library(gutenbergr)
+```
+
+## Part 1: Example Code
+
+### 1.1 The sentiments datasets
+
+```{r echo=TRUE, eval=TRUE}
+get_sentiments("afinn")
+get_sentiments("bing")
+get_sentiments("nrc")
+```
+
+### 1.2 Sentiment analysis with inner join
+
+```{r echo=TRUE, eval=TRUE}
+#words with a joy score from the NRC lexicon
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(text, 
+                                regex("^chapter [\\divxlc]", 
+                                      ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+
+# Now that the text is in a tidy format with one word per row, we are ready to do the sentiment analysis
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+tidy_books %>%
+  filter(book == "Emma") %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+
+# Next, we count up how many positive and negative words there are in defined sections of each book
+jane_austen_sentiment <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(book, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+# Now we can plot these sentiment scores across the plot trajectory of each novel
+ggplot(jane_austen_sentiment, aes(index, sentiment, fill = book)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~book, ncol = 2, scales = "free_x")
+```
+
+### 1.3 Comparing the three sentiment dictionaries
+
+```{r echo=TRUE, eval=TRUE}
+# Choose only the words from the one novel we are interested in
+pride_prejudice <- tidy_books %>% 
+  filter(book == "Pride & Prejudice")
+
+pride_prejudice
+
+# define larger sections of text that span multiple lines and find the net sentiment in each of these sections of text
+afinn <- pride_prejudice %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+bing_and_nrc <- bind_rows(
+  pride_prejudice %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al."),
+  pride_prejudice %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+# Bind them together and visualize them 
+bind_rows(afinn, 
+          bing_and_nrc) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+
+# how many positive and negative words are in these lexicons
+get_sentiments("nrc") %>% 
+  filter(sentiment %in% c("positive", "negative")) %>% 
+  count(sentiment)
+
+get_sentiments("bing") %>% 
+  count(sentiment)
+
+
+```
+
+### 1.4 Most common positive and negative words
+
+```{r echo=TRUE, eval=TRUE}
+bing_word_counts <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+bing_word_counts
+
+# This can be shown visually, and we can pipe straight into ggplot2
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10) %>% 
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
+# Anomaly for the word "miss"
+custom_stop_words <- bind_rows(tibble(word = c("miss"),  
+                                      lexicon = c("custom")), 
+                               stop_words)
+
+custom_stop_words
+```
+
+### 1.5 Wordclouds
+
+```{r echo=TRUE, eval=TRUE}
+tidy_books %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+#  sentiment analysis to tag positive and negative words using an inner join, then find the most common positive and negative words
+tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("gray20", "gray80"),
+                   max.words = 100)
+
+
+```
+
+### 1.6 Looking at units beyond just words
+
+```{r echo=TRUE, eval=TRUE}
+p_and_p_sentences <- tibble(text = prideprejudice) %>% 
+  unnest_tokens(sentence, text, token = "sentences")
+
+p_and_p_sentences$sentence[2]
+
+austen_chapters <- austen_books() %>%
+  group_by(book) %>%
+  unnest_tokens(chapter, text, token = "regex", 
+                pattern = "Chapter|CHAPTER [\\dIVXLC]") %>%
+  ungroup()
+
+austen_chapters %>% 
+  group_by(book) %>% 
+  summarise(chapters = n())
+
+bingnegative <- get_sentiments("bing") %>% 
+  filter(sentiment == "negative")
+
+wordcounts <- tidy_books %>%
+  group_by(book, chapter) %>%
+  summarize(words = n())
+
+tidy_books %>%
+  semi_join(bingnegative) %>%
+  group_by(book, chapter) %>%
+  summarize(negativewords = n()) %>%
+  left_join(wordcounts, by = c("book", "chapter")) %>%
+  mutate(ratio = negativewords/words) %>%
+  filter(chapter != 0) %>%
+  slice_max(ratio, n = 1) %>% 
+  ungroup()
+```
+
+## Part 2: Extension - My Bondage and My Freedom by Frederick Douglass
+
+I will analyze text “My Bondage and My Freedom” by Frederick Douglass. I will use the gutenbergr library to search and download it. 
+
+### 2.1 The sentiments datasets
+
+```{r echo=TRUE, eval=TRUE}
+bondage_count <- gutenberg_download(202)
+bondage_count
+```
+### 2.2 Tidy the data
+
+```{r echo=TRUE, eval=TRUE}
+#removing the first 763 rows of text which are table of contents
+bondage_count <- bondage_count[c(763:nrow(bondage_count)),]
+
+#using unnest_tokens to have each line be broken into indidual rows. 
+bondage <- bondage_count %>% unnest_tokens(word, text)
+bondage
+
+bondage_index <- bondage_count %>% 
+  filter(text != "") %>%
+  mutate(linenumber = row_number(),
+         chapter = cumsum(str_detect(text, regex("(?<=Chapter )([\\dII]{1,3})", ignore_case =  TRUE)))) 
+
+bondage_index
+```
+
+### 2.3 Most frequent postive words
+
+```{r echo=TRUE, eval=TRUE}
+bondage %>% 
+  inner_join(get_sentiments("bing")) %>% 
+  filter(sentiment == "positive") %>%
+  count(word, sentiment, sort = TRUE) %>% 
+  top_n(10) %>%
+  mutate(word = reorder(word, desc(n))) %>%
+  ggplot() + 
+  aes(x = word, y = n) +
+  labs(title = "Most Frequent Positive Words") + 
+  ylab("Count") + 
+  xlab("Word") +
+  geom_col() + 
+  geom_text(aes(label = n, vjust = -.5)) + 
+  theme(
+    panel.background = element_rect(fill = "white", color = NA),
+    axis.text.y = element_blank(), 
+    axis.ticks.y = element_blank(),
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+### 2.4 Most frequent negative words
+
+```{r echo=TRUE, eval=TRUE}
+bondage %>% 
+  inner_join(get_sentiments("bing")) %>% 
+  filter(sentiment == "negative") %>%
+  count(word, sentiment, sort = TRUE) %>% 
+  top_n(10) %>%
+  mutate(word = reorder(word, desc(n))) %>%
+  ggplot() + 
+  aes(x = word, y = n) +
+  labs(title = "Most Frequent Negative Words") + 
+  ylab("Count") + 
+  xlab("Word") +
+  geom_col() + 
+  geom_text(aes(label = n, vjust = -.5)) + 
+  theme(
+    panel.background = element_rect(fill = "white", color = NA),
+    axis.text.y = element_blank(), 
+    axis.ticks.y = element_blank(),
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+### 2.5 Loughran Lexicon
+
+Here, I will use loughran lexicon instead of one of the lexicons used in the sample code.
+
+```{r echo=TRUE, eval=TRUE}
+lghrn <- get_sentiments("loughran")
+unique(lghrn$sentiment)
+
+#let’s explore the lexicon to see what types of words are litigious and constraining.
+
+bondage_index %>% 
+  unnest_tokens(word, text) %>% 
+  inner_join(get_sentiments("loughran")) %>%
+  filter(sentiment %in% c("litigious", "constraining")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ggplot() + 
+  aes(x = reorder(word,desc(n)), y = n) + 
+  geom_col() +
+  facet_grid(~sentiment, scales = "free_x")  + 
+  geom_text(aes(label = n, vjust = -.5)) + 
+  labs(title = "Words Associated with Litigious and Constraining") + 
+  ylab("Count") + 
+  xlab("Word") + 
+  theme(
+    panel.background = element_rect(fill = "white", color = NA),
+    axis.text.y = element_blank(), 
+    axis.ticks.y = element_blank(),
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
