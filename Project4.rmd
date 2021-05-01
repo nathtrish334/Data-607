@@ -1,0 +1,178 @@
+---
+title: "Data 607 - Project 4"
+author: "Trishita Nath"
+date: "5/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+It can be useful to be able to classify new "test" documents using already classified "training" documents.  A common example is using a corpus of labeled spam and ham (non-spam) e-mails to predict whether or not a new document is spam.  
+
+For this project, you can start with a spam/ham dataset, then predict the class of new documents (either withheld from the training dataset or from another source such as your own spam folder).   One example corpus:   https://spamassassin.apache.org/old/publiccorpus/ 
+
+## Libraries
+
+```{r}
+require(knitr)
+require(plyr)
+require(tm)
+require(tidytext)
+require(class)
+require(tidyr)
+require(tidyverse)
+require(caret)
+require(RTextTools)
+```
+
+## Loading Data  
+
+I downloaded and extracted the docs into a folder named spamham on local drive D.
+
+```{r echo=TRUE, eval=TRUE}
+# Directories
+spam_folder <- 'D:/spamham/spam_2'
+ham_folder <- 'D:/spamham/easy_ham'
+
+#docs
+spam_docs <- list.files(path = spam_folder, full.names = TRUE)
+ham_docs <- list.files(path = ham_folder, full.names = TRUE)
+
+#Ignore the 'cmd' docs
+spam_docs = spam_docs[which(spam_docs!="cmds")]
+ham_docs=ham_docs[which(ham_docs!="cmds")]
+
+#Count of spam and ham docs
+length(spam_docs)
+length(ham_docs)
+
+```
+
+## Tidying Data and Creating Corpus
+
+```{r echo=TRUE, eval=TRUE}
+# Function to create a corpus
+corpusCreate <- function(doc_path) {
+  corpus <- doc_path %>%                            
+    paste(., list.files(.), sep = "/") %>%  # Create a vector of doc paths 
+    lapply(readLines) %>%                   # Read the text in each doc
+    VectorSource() %>%  # Create VectorSource of the read text
+    VCorpus()           # create VCorpus
+  return(corpus)
+}
+
+# Function to clean the data
+fileClean <- function(corpus) {
+    corpus <- corpus %>%
+    tm_map(removeNumbers) %>%       # Remove numbers
+    tm_map(removePunctuation) %>%   # Remove punctuation symbols 
+    tm_map(tolower) %>%             # Transform  to lowercase
+    tm_map(PlainTextDocument) %>%   # Transform back to PlainTextDocument
+    tm_map(removeWords, stopwords("en")) %>% # Remove stopwords
+    tm_map(stripWhitespace) %>%              # Remove white spaces
+    tm_map(stemDocument)                     #Reduce to stems
+  return(corpus)
+}
+
+# Function to add a value to a specified tag
+tagValue <- function(corpus, tag, value){
+  for (i in 1:length(corpus)){
+    meta(corpus[[i]], tag) <- value
+  }
+  return(corpus)
+}
+
+#Create the two corpuses
+
+# ham corpus
+ham_corpus <- ham_folder%>%
+   corpusCreate %>% 
+   fileClean  %>% 
+   tagValue(tag = "ham_spam", value = "ham")
+
+
+
+# spam corpus
+spam_corpus <- spam_folder %>%
+  corpusCreate %>%
+  fileClean %>%
+  tagValue(tag = "ham_spam", value = "spam")
+
+# Joining the corpuses together and mix them
+combined_corpus <- c(ham_corpus, spam_corpus)
+
+# Scramble the order of the corpus
+combined_corpus <- combined_corpus[sample(c(1:length(combined_corpus)))]
+
+# create the document term matrix and remove sparse terms. 
+corpus_dtm <- combined_corpus %>% 
+                    DocumentTermMatrix() %>% 
+                    removeSparseTerms(1-(10/length(combined_corpus))) # Terms appearing in less than 10 documents will be left out.
+
+# Retrieving Spam Ham labels.
+corpus_labels <- unlist(meta(combined_corpus, "ham_spam"))
+
+```
+
+## Training 
+
+```{r echo=TRUE, eval=TRUE}
+# Create  container and split the dataset: 80% for training and 20% for testing
+label_num <- length(corpus_labels)
+split <- round(0.8*label_num) 
+container <- create_container(
+  corpus_dtm, 
+  labels = corpus_labels, 
+  trainSize = 1:split,
+  testSize = (split+1):label_num,
+  virgin = F
+)
+```
+
+### Training Models
+
+I will use three different modelling algorithms
+
+* Decision Tree
+* Boosting
+* Suvervisor Vector Machines
+
+```{r echo=TRUE, eval=TRUE}
+corpus_tree_model <- train_model(container, "TREE")
+corpus_boosting_model <- train_model(container, "BOOSTING")
+corpus_svm_model <- train_model(container, "SVM")
+```
+
+## Testing
+
+```{r echo=TRUE, eval=TRUE}
+# Classifying using the trained models
+corpus_tree_out <- classify_model(container, corpus_tree_model)
+corpus_boosting_out <- classify_model(container, corpus_boosting_model)
+corpus_svm_out <- classify_model(container, corpus_svm_model)
+
+# Collect the classification results into a table
+corpus_out_labels <- data.frame(
+  correct_label = corpus_labels[(split+1):label_num],
+  tree = as.character(corpus_tree_out[,1]),
+  boosting = as.character(corpus_boosting_out[,1]),
+  svm = as.character(corpus_svm_out[,1]))
+
+# Print the results
+for (i in 2:4){
+  print(names(corpus_out_labels)[i])
+  table(corpus_out_labels[,1] == corpus_out_labels[,i]) %>% 
+    print() %>% 
+    prop.table() %>% 
+    round(2) %>% 
+    print()
+}
+```
+
+## Conclusion
+
+All the model classifiers achieved a 99% accuracy rate.
