@@ -1,0 +1,32 @@
+---
+title: "Data 607 Final Project Proposal"
+author: "Trishita Nath"
+date: "5/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+For this final project, I will be working alone. I am going to analyze a dataset that holds data for the Real-Estate industry as reported by Zestimate. Zestimate was created to give consumers as much information as possible about homes and the housing market, marking the first time consumers had access to this type of home value information at no cost
+
+## Data Source
+
+Datasets are available at: https://www.kaggle.com/c/zillow-prize-1/data
+File descriptions
+
+* properties_2016.csv - all the properties with their home features for 2016.
+* properties_2017.csv - all the properties with their home features for 2017  
+* train_2016.csv - the training set with transactions from 1/1/2016 to 12/31/2016
+* train_2017.csv - the training set with transactions from 1/1/2017 to 9/15/2017
+* sample_submission.csv - a sample submission file in the correct format
+* zillow_data_dictionary.xlsx - definition of data fields
+
+## Project Goal
+
+I seek to establish an understanding of the relationship between home prices and characteristcs of housing as described in Zestimate's datasets. I will draw a relation to factors such as economic forces, home features, and geographical inequality; and their impact on prices of homes.
+
+I will exhaustively apply the various concepts that I have learnt thus far, to come up with a good analysis report of this dataset.
