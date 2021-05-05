@@ -1,0 +1,69 @@
+---
+title: "Data 607 Discussion 11 - Recommender System"
+author: "Trishita Nath"
+date: "5/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Your task is to analyze an existing recommender system that you find interesting. You should:
+
+1. Perform a Scenario Design analysis as described below.  Consider whether it makes sense for your selected recommender system to perform scenario design twice, once for the organization (e.g. Amazon.com) and once for the organization's customers.
+2. Attempt to reverse engineer what you can about the site, from the site interface and any available information that you can find on the Internet or elsewhere.
+3. Include specific recommendations about how to improve the site's recommendation capabilities going forward. 
+4. Create your report using an R Markdown file, and create a discussion thread with a link to the GitHub repo where your Markdown file notebook resides.  You are not expected to need to write code for this discussion assignment.
+
+## Recommender System
+
+The The Netflix recommender system
+
+## Target Users
+
+Over 207 million subscribers who would like to stream videos from Netflix collection of movies and TV shows.
+
+## Key goals?
+
+The Netflix recommender system aims to help Netflix subscribers to easily find videos of their preference and provide a personalized streaming experience. This system uses machine learning and algorithms to help serve different use cases that create a complete Netflix experience.
+
+## How the application help them accomplish their goals
+
+The recommender system because we believe that it is core of Netflix business for the following reasons:  
+
+* It helps to achieve clear insights. With the recommender system, Netflix is able to determine content suitable to a particular user basing on their preference.(provide personalized content to a user hence improve the users' experience.
+* Through content personalization, the right video content reaches the right audience hence achieving even viewing across different categories of videos. The recommender system spreads viewing across many more videos much more evenly than would an unpersonalized system.
+* Personalization of video content allows Netflix to significantly increase chances of success when offering recommendations. This has led to a reduction in monthly churn and hence boosting revenue generation. 
+
+The Netflix Recommender System uses the following algorithms:
+
+* Personalized Video Ranker(PVR)
+* Top-N Video Ranker
+* Trending Now Ranker
+* Continue Watching Ranker
+* Video-Video Similarity Ranker
+* Page Generation (Row Selection and Ranking)
+* Evidence
+* Search
+
+## Reverse Engineering
+
+After logging into Netflix, the homepage layout consists of two rows each representing a large group and often a genre of movies. This helps the user to choose whether they want to watch a movie or show that based on category. A user can swipe right to see more content in a category within each row.
+
+Netflix determines the top few rows, based on rules created using A|B testing; enabling users to pick up where they left off their favorite movie / shows. This typically includes the categories ‘Continue Watching’ and ‘Because You Watched..”. The second row shows ‘Continue Watching'
+
+## Recommendations for Improvement
+
+* I would recommend users to be provided with a way to search for additional categories if the ones on the homepage are not what the user is looking for. Currently, the much you can search is the specific titles.
+* Netflix should provide a way for customers to create their own custom categories in their profiles, say, based on their watch lists. From these custom categories, Netflix can augment their algorithms further and find categories/genres they did not know existed.
+* At the moment, trailers automatically play when you hover title in the top few rows; I wish there was a way to play trailers for all content as this might provide a quick glimpse of each video.
+
+## Reference
+
+* https://towardsdatascience.com/deep-dive-into-netflixs-recommender-system-341806ae3b48
+* https://www.wired.co.uk/article/how-do-netflixs-algorithms-work-machine-learning-helps-to-predict-what-viewers-will-like
+* https://netflixtechblog.com/artwork-personalization-c589f074ad76
+* https://help.netflix.com/en/node/100639
